@@ -1,16 +1,300 @@
+// let allSessions = {};
+// let allChats = [];
+// let currentFilter = 'all';
+
+// // Show toast notification
+// function showToast(message) {
+//     const toast = document.getElementById('toast');
+//     const toastMessage = document.getElementById('toast-message');
+//     toastMessage.textContent = message;
+//     toast.classList.add('show');
+//     setTimeout(() => {
+//         toast.classList.remove('show');
+//     }, 3000);
+// }
+
+// // Load all data
+// async function loadAllData() {
+//     await Promise.all([
+//         loadStats(),
+//         loadSessions(),
+//         loadChats()
+//     ]);
+// }
+
+// // Load stats
+// async function loadStats() {
+//     try {
+//         const response = await fetch('/api/admin/stats');
+//         const stats = await response.json();
+        
+//         document.getElementById('total-messages').textContent = stats.totalMessages;
+//         document.getElementById('total-users').textContent = stats.totalUsers;
+//         document.getElementById('active-today').textContent = stats.activeToday;
+//         document.getElementById('avg-messages').textContent = stats.averageMessagesPerUser.toFixed(1);
+//     } catch (error) {
+//         console.error('Error loading stats:', error);
+//         showToast('Error loading statistics');
+//     }
+// }
+
+// // Load sessions
+// async function loadSessions() {
+//     try {
+//         const response = await fetch('/api/admin/sessions');
+//         allSessions = await response.json();
+//         displaySessions();
+//     } catch (error) {
+//         console.error('Error loading sessions:', error);
+//         showToast('Error loading sessions');
+//     }
+// }
+
+// // Display sessions
+// function displaySessions() {
+//     const container = document.getElementById('sessions-list');
+//     const sessionsList = Object.values(allSessions);
+
+//     if (sessionsList.length === 0) {
+//         container.innerHTML = `
+//             <div class="empty-state">
+//                 <div class="icon">
+//                     <i class="fas fa-user-slash"></i>
+//                 </div>
+//                 <p>No sessions yet</p>
+//             </div>
+//         `;
+//         return;
+//     }
+
+//     // Filter by time
+//     let filtered = sessionsList;
+//     if (currentFilter === 'today') {
+//         const today = new Date().toDateString();
+//         filtered = sessionsList.filter(s => new Date(s.lastSeen).toDateString() === today);
+//     } else if (currentFilter === 'week') {
+//         const weekAgo = new Date();
+//         weekAgo.setDate(weekAgo.getDate() - 7);
+//         filtered = sessionsList.filter(s => new Date(s.lastSeen) >= weekAgo);
+//     }
+
+//     // Sort by last seen
+//     filtered.sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
+
+//     container.innerHTML = filtered.map(session => `
+//         <div class="session-item" onclick="loadUserChats('${session.userId}')">
+//             <div class="session-info">
+//                 <div class="user-avatar">
+//                     <i class="fas fa-user"></i>
+//                 </div>
+//                 <div>
+//                     <div class="user-id">User: ${session.userId.substring(0, 16)}...</div>
+//                     <div class="meta">
+//                         <i class="far fa-clock"></i>
+//                         Last seen: ${new Date(session.lastSeen).toLocaleString()}
+//                     </div>
+//                 </div>
+//             </div>
+//             <div class="session-badge">${session.messageCount} msgs</div>
+//         </div>
+//     `).join('');
+// }
+
+// // Load chats
+// async function loadChats() {
+//     try {
+//         const response = await fetch('/api/admin/chats');
+//         allChats = await response.json();
+//         displayChats(allChats);
+//     } catch (error) {
+//         console.error('Error loading chats:', error);
+//         showToast('Error loading chats');
+//     }
+// }
+
+// // Display chats
+// function displayChats(chats) {
+//     const container = document.getElementById('chats-list');
+
+//     if (chats.length === 0) {
+//         container.innerHTML = `
+//             <div class="empty-state">
+//                 <div class="icon">
+//                     <i class="fas fa-comments"></i>
+//                 </div>
+//                 <p>No chats yet</p>
+//             </div>
+//         `;
+//         return;
+//     }
+
+//     // Sort by timestamp (newest first)
+//     const sorted = [...chats].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+//     container.innerHTML = sorted.map(chat => `
+//         <div class="chat-message">
+//             <div class="header-row">
+//                 <div class="user-badge">
+//                     <i class="fas fa-user-circle"></i>
+//                     User: ${chat.userId.substring(0, 12)}...
+//                 </div>
+//                 <div class="timestamp">
+//                     <i class="far fa-clock"></i>
+//                     ${new Date(chat.timestamp).toLocaleString()}
+//                 </div>
+//             </div>
+//             <div class="message-bubble user-msg">
+//                 ${chat.userMessage}
+//             </div>
+//             <div class="message-bubble ai-msg">
+//                 ${chat.aiResponse}
+//             </div>
+//         </div>
+//     `).join('');
+// }
+
+// // Load specific user chats
+// async function loadUserChats(userId) {
+//     try {
+//         const response = await fetch(`/api/admin/user/${userId}`);
+//         const userChats = await response.json();
+//         displayChats(userChats);
+        
+//         // Scroll to chats section
+//         document.querySelector('.chats-section').scrollIntoView({ behavior: 'smooth' });
+//         showToast(`Loaded ${userChats.length} messages from user`);
+//     } catch (error) {
+//         console.error('Error loading user chats:', error);
+//         showToast('Error loading user chats');
+//     }
+// }
+
+// // Filter sessions
+// function filterSessions() {
+//     const search = document.getElementById('search-sessions').value.toLowerCase();
+
+//     const filtered = Object.values(allSessions).filter(s => 
+//         s.userId.toLowerCase().includes(search)
+//     );  
+    
+//     const container = document.getElementById('sessions-list');
+//     if (filtered.length === 0) {
+//         container.innerHTML = `
+//             <div class="empty-state">
+//                 <div class="icon">
+//                     <i class="fas fa-search"></i>
+//                 </div>
+//                 <p>No matching sessions</p>
+//             </div>
+//         `;
+//         return;
+//     }
+
+//     container.innerHTML = filtered.map(session => `
+//         <div class="session-item" onclick="loadUserChats('${session.userId}')">
+//             <div class="session-info">
+//                 <div class="user-avatar">
+//                     <i class="fas fa-user"></i>
+//                 </div>
+//                 <div>
+//                     <div class="user-id">User: ${session.userId.substring(0, 16)}...</div>
+//                     <div class="meta">
+//                         <i class="far fa-clock"></i>
+//                         Last seen: ${new Date(session.lastSeen).toLocaleString()}
+//                     </div>
+//                 </div>
+//             </div>
+//             <div class="session-badge">${session.messageCount} msgs</div>
+//         </div>
+//     `).join('');
+// }
+
+// // Filter chats
+// function filterChats() {
+//     const search = document.getElementById('search-chats').value.toLowerCase();
+//     const filtered = allChats.filter(chat => 
+//         chat.userMessage.toLowerCase().includes(search) ||
+//         chat.aiResponse.toLowerCase().includes(search) ||
+//         chat.userId.toLowerCase().includes(search)
+//     );
+//     displayChats(filtered);
+// }
+
+// // Filter by time
+// function filterByTime(filter) {
+//     currentFilter = filter;
+    
+//     // Update button states
+//     document.querySelectorAll('.filter-btn').forEach(btn => {
+//         btn.classList.remove('active');
+//     });
+//     event.target.classList.add('active');
+    
+//     displaySessions();
+// }
+
+// // Refresh data
+// async function refreshData() {
+//     showToast('Refreshing data...');
+//     await loadAllData();
+//     showToast('Data refreshed successfully!');
+// }
+
+// // Export data
+// function exportData() {
+//     const data = {
+//         sessions: allSessions,
+//         chats: allChats,
+//         exportedAt: new Date().toISOString()
+//     };
+    
+//     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+//     const url = URL.createObjectURL(blob);
+//     const a = document.createElement('a');
+//     a.href = url;
+//     a.download = `bitlon-chats-${new Date().toISOString().split('T')[0]}.json`;
+//     a.click();
+    
+//     showToast('Data exported successfully!');
+// }
+
+// // Delete all chats
+// async function deleteAllChats() {
+//     if (!confirm('⚠️ Are you sure you want to delete ALL chat data? This cannot be undone!')) {
+//         return;
+//     }
+
+//     try {
+//         await fetch('/api/admin/chats', { method: 'DELETE' });
+//         showToast('All data deleted successfully');
+//         await loadAllData();
+//     } catch (error) {
+//         console.error('Error deleting chats:', error);
+//         showToast('Error deleting data');
+//     }
+// }
+
+// // Load data on page load
+// loadAllData();
+
+// // Auto-refresh every 30 seconds
+// setInterval(loadAllData, 30000);
+
+
+
 let allSessions = {};
 let allChats = [];
-let currentFilter = 'all';
 
 // Show toast notification
 function showToast(message) {
     const toast = document.getElementById('toast');
-    const toastMessage = document.getElementById('toast-message');
-    toastMessage.textContent = message;
-    toast.classList.add('show');
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+    if (toast) {
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
 }
 
 // Load all data
@@ -28,10 +312,10 @@ async function loadStats() {
         const response = await fetch('/api/admin/stats');
         const stats = await response.json();
         
-        document.getElementById('total-messages').textContent = stats.totalMessages;
-        document.getElementById('total-users').textContent = stats.totalUsers;
-        document.getElementById('active-today').textContent = stats.activeToday;
-        document.getElementById('avg-messages').textContent = stats.averageMessagesPerUser.toFixed(1);
+        document.getElementById('total-messages').textContent = stats.totalMessages || 0;
+        document.getElementById('total-users').textContent = stats.totalUsers || 0;
+        document.getElementById('active-today').textContent = stats.activeToday || 0;
+        document.getElementById('avg-messages').textContent = (stats.averageMessagesPerUser || 0).toFixed(1);
     } catch (error) {
         console.error('Error loading stats:', error);
         showToast('Error loading statistics');
@@ -56,48 +340,30 @@ function displaySessions() {
     const sessionsList = Object.values(allSessions);
 
     if (sessionsList.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">
-                    <i class="fas fa-user-slash"></i>
-                </div>
-                <p>No sessions yet</p>
-            </div>
-        `;
+        container.innerHTML = '<div class="empty-state"><div class="icon">👤</div><p>No sessions yet</p></div>';
         return;
     }
 
-    // Filter by time
-    let filtered = sessionsList;
-    if (currentFilter === 'today') {
-        const today = new Date().toDateString();
-        filtered = sessionsList.filter(s => new Date(s.lastSeen).toDateString() === today);
-    } else if (currentFilter === 'week') {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        filtered = sessionsList.filter(s => new Date(s.lastSeen) >= weekAgo);
-    }
-
     // Sort by last seen
-    filtered.sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
+    sessionsList.sort((a, b) => new Date(b.lastSeen || b.lastseen) - new Date(a.lastSeen || a.lastseen));
 
-    container.innerHTML = filtered.map(session => `
-        <div class="session-item" onclick="loadUserChats('${session.userId}')">
-            <div class="session-info">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
+    container.innerHTML = sessionsList.map(session => {
+        const userId = session.userId || session.user_id || 'Unknown';
+        const lastSeen = session.lastSeen || session.lastseen || new Date();
+        const messageCount = session.messageCount || session.message_count || 0;
+        
+        return `
+            <div class="session-item" onclick="loadUserChats('${userId}')">
                 <div>
-                    <div class="user-id">User: ${session.userId.substring(0, 16)}...</div>
+                    <div class="user-id">👤 User: ${userId.substring(0, 16)}...</div>
                     <div class="meta">
-                        <i class="far fa-clock"></i>
-                        Last seen: ${new Date(session.lastSeen).toLocaleString()}
+                        🕐 Last seen: ${new Date(lastSeen).toLocaleString()}
                     </div>
                 </div>
+                <div class="session-badge">${messageCount} msgs</div>
             </div>
-            <div class="session-badge">${session.messageCount} msgs</div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Load chats
@@ -116,41 +382,50 @@ async function loadChats() {
 function displayChats(chats) {
     const container = document.getElementById('chats-list');
 
-    if (chats.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">
-                    <i class="fas fa-comments"></i>
-                </div>
-                <p>No chats yet</p>
-            </div>
-        `;
+    if (!chats || chats.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">💬</div><p>No chats yet</p></div>';
         return;
     }
 
     // Sort by timestamp (newest first)
-    const sorted = [...chats].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const sorted = [...chats].sort((a, b) => {
+        const timeA = new Date(a.timestamp || a.created_at || 0);
+        const timeB = new Date(b.timestamp || b.created_at || 0);
+        return timeB - timeA;
+    });
 
-    container.innerHTML = sorted.map(chat => `
-        <div class="chat-message">
-            <div class="header-row">
-                <div class="user-badge">
-                    <i class="fas fa-user-circle"></i>
-                    User: ${chat.userId.substring(0, 12)}...
+    container.innerHTML = sorted.map(chat => {
+        // Handle different field names from PostgreSQL
+        const userId = chat.userId || chat.user_id || 'Unknown';
+        const userMessage = chat.userMessage || chat.user_message || '';
+        const aiResponse = chat.aiResponse || chat.ai_response || '';
+        const timestamp = chat.timestamp || chat.created_at || new Date();
+        
+        // Safely handle userId substring
+        const displayUserId = userId ? userId.substring(0, 12) : 'Unknown';
+        
+        return `
+            <div class="chat-message">
+                <div class="header-row">
+                    <div class="user-badge">User: ${displayUserId}...</div>
+                    <div class="timestamp">🕐 ${new Date(timestamp).toLocaleString()}</div>
                 </div>
-                <div class="timestamp">
-                    <i class="far fa-clock"></i>
-                    ${new Date(chat.timestamp).toLocaleString()}
+                <div class="message-bubble user-msg">
+                    ${escapeHtml(userMessage)}
+                </div>
+                <div class="message-bubble ai-msg">
+                    ${escapeHtml(aiResponse)}
                 </div>
             </div>
-            <div class="message-bubble user-msg">
-                ${chat.userMessage}
-            </div>
-            <div class="message-bubble ai-msg">
-                ${chat.aiResponse}
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Load specific user chats
@@ -161,7 +436,10 @@ async function loadUserChats(userId) {
         displayChats(userChats);
         
         // Scroll to chats section
-        document.querySelector('.chats-section').scrollIntoView({ behavior: 'smooth' });
+        const chatsSection = document.querySelector('.chats-section');
+        if (chatsSection) {
+            chatsSection.scrollIntoView({ behavior: 'smooth' });
+        }
         showToast(`Loaded ${userChats.length} messages from user`);
     } catch (error) {
         console.error('Error loading user chats:', error);
@@ -172,55 +450,54 @@ async function loadUserChats(userId) {
 // Filter sessions
 function filterSessions() {
     const search = document.getElementById('search-sessions').value.toLowerCase();
-
-    const filtered = Object.values(allSessions).filter(s => 
-        s.userId.toLowerCase().includes(search)
-    );  
+    const filtered = Object.values(allSessions).filter(s => {
+        const userId = s.userId || s.user_id || '';
+        return userId.toLowerCase().includes(search);
+    });
     
     const container = document.getElementById('sessions-list');
     if (filtered.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">
-                    <i class="fas fa-search"></i>
-                </div>
-                <p>No matching sessions</p>
-            </div>
-        `;
+        container.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>No matching sessions</p></div>';
         return;
     }
 
-    container.innerHTML = filtered.map(session => `
-        <div class="session-item" onclick="loadUserChats('${session.userId}')">
-            <div class="session-info">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
+    container.innerHTML = filtered.map(session => {
+        const userId = session.userId || session.user_id || 'Unknown';
+        const lastSeen = session.lastSeen || session.lastseen || new Date();
+        const messageCount = session.messageCount || session.message_count || 0;
+        
+        return `
+            <div class="session-item" onclick="loadUserChats('${userId}')">
                 <div>
-                    <div class="user-id">User: ${session.userId.substring(0, 16)}...</div>
+                    <div class="user-id">👤 User: ${userId.substring(0, 16)}...</div>
                     <div class="meta">
-                        <i class="far fa-clock"></i>
-                        Last seen: ${new Date(session.lastSeen).toLocaleString()}
+                        🕐 Last seen: ${new Date(lastSeen).toLocaleString()}
                     </div>
                 </div>
+                <div class="session-badge">${messageCount} msgs</div>
             </div>
-            <div class="session-badge">${session.messageCount} msgs</div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Filter chats
 function filterChats() {
     const search = document.getElementById('search-chats').value.toLowerCase();
-    const filtered = allChats.filter(chat => 
-        chat.userMessage.toLowerCase().includes(search) ||
-        chat.aiResponse.toLowerCase().includes(search) ||
-        chat.userId.toLowerCase().includes(search)
-    );
+    const filtered = allChats.filter(chat => {
+        const userMessage = (chat.userMessage || chat.user_message || '').toLowerCase();
+        const aiResponse = (chat.aiResponse || chat.ai_response || '').toLowerCase();
+        const userId = (chat.userId || chat.user_id || '').toLowerCase();
+        
+        return userMessage.includes(search) || 
+               aiResponse.includes(search) || 
+               userId.includes(search);
+    });
     displayChats(filtered);
 }
 
 // Filter by time
+let currentFilter = 'all';
+
 function filterByTime(filter) {
     currentFilter = filter;
     
@@ -230,7 +507,49 @@ function filterByTime(filter) {
     });
     event.target.classList.add('active');
     
-    displaySessions();
+    const sessionsList = Object.values(allSessions);
+    let filtered = sessionsList;
+    
+    if (filter === 'today') {
+        const today = new Date().toDateString();
+        filtered = sessionsList.filter(s => {
+            const lastSeen = new Date(s.lastSeen || s.lastseen);
+            return lastSeen.toDateString() === today;
+        });
+    } else if (filter === 'week') {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        filtered = sessionsList.filter(s => {
+            const lastSeen = new Date(s.lastSeen || s.lastseen);
+            return lastSeen >= weekAgo;
+        });
+    }
+    
+    const container = document.getElementById('sessions-list');
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No sessions in this period</p></div>';
+        return;
+    }
+    
+    filtered.sort((a, b) => new Date(b.lastSeen || b.lastseen) - new Date(a.lastSeen || a.lastseen));
+    
+    container.innerHTML = filtered.map(session => {
+        const userId = session.userId || session.user_id || 'Unknown';
+        const lastSeen = session.lastSeen || session.lastseen || new Date();
+        const messageCount = session.messageCount || session.message_count || 0;
+        
+        return `
+            <div class="session-item" onclick="loadUserChats('${userId}')">
+                <div>
+                    <div class="user-id">👤 User: ${userId.substring(0, 16)}...</div>
+                    <div class="meta">
+                        🕐 Last seen: ${new Date(lastSeen).toLocaleString()}
+                    </div>
+                </div>
+                <div class="session-badge">${messageCount} msgs</div>
+            </div>
+        `;
+    }).join('');
 }
 
 // Refresh data
@@ -254,6 +573,7 @@ function exportData() {
     a.href = url;
     a.download = `bitlon-chats-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
+    URL.revokeObjectURL(url);
     
     showToast('Data exported successfully!');
 }
@@ -265,9 +585,13 @@ async function deleteAllChats() {
     }
 
     try {
-        await fetch('/api/admin/chats', { method: 'DELETE' });
-        showToast('All data deleted successfully');
-        await loadAllData();
+        const response = await fetch('/api/admin/chats', { method: 'DELETE' });
+        if (response.ok) {
+            showToast('All data deleted successfully');
+            await loadAllData();
+        } else {
+            showToast('Error deleting data');
+        }
     } catch (error) {
         console.error('Error deleting chats:', error);
         showToast('Error deleting data');
