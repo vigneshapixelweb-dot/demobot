@@ -1,605 +1,428 @@
-// let allSessions = {};
-// let allChats = [];
-// let currentFilter = 'all';
-
-// // Show toast notification
-// function showToast(message) {
-//     const toast = document.getElementById('toast');
-//     const toastMessage = document.getElementById('toast-message');
-//     toastMessage.textContent = message;
-//     toast.classList.add('show');
-//     setTimeout(() => {
-//         toast.classList.remove('show');
-//     }, 3000);
-// }
-
-// // Load all data
-// async function loadAllData() {
-//     await Promise.all([
-//         loadStats(),
-//         loadSessions(),
-//         loadChats()
-//     ]);
-// }
-
-// // Load stats
-// async function loadStats() {
-//     try {
-//         const response = await fetch('/api/admin/stats');
-//         const stats = await response.json();
-        
-//         document.getElementById('total-messages').textContent = stats.totalMessages;
-//         document.getElementById('total-users').textContent = stats.totalUsers;
-//         document.getElementById('active-today').textContent = stats.activeToday;
-//         document.getElementById('avg-messages').textContent = stats.averageMessagesPerUser.toFixed(1);
-//     } catch (error) {
-//         console.error('Error loading stats:', error);
-//         showToast('Error loading statistics');
-//     }
-// }
-
-// // Load sessions
-// async function loadSessions() {
-//     try {
-//         const response = await fetch('/api/admin/sessions');
-//         allSessions = await response.json();
-//         displaySessions();
-//     } catch (error) {
-//         console.error('Error loading sessions:', error);
-//         showToast('Error loading sessions');
-//     }
-// }
-
-// // Display sessions
-// function displaySessions() {
-//     const container = document.getElementById('sessions-list');
-//     const sessionsList = Object.values(allSessions);
-
-//     if (sessionsList.length === 0) {
-//         container.innerHTML = `
-//             <div class="empty-state">
-//                 <div class="icon">
-//                     <i class="fas fa-user-slash"></i>
-//                 </div>
-//                 <p>No sessions yet</p>
-//             </div>
-//         `;
-//         return;
-//     }
-
-//     // Filter by time
-//     let filtered = sessionsList;
-//     if (currentFilter === 'today') {
-//         const today = new Date().toDateString();
-//         filtered = sessionsList.filter(s => new Date(s.lastSeen).toDateString() === today);
-//     } else if (currentFilter === 'week') {
-//         const weekAgo = new Date();
-//         weekAgo.setDate(weekAgo.getDate() - 7);
-//         filtered = sessionsList.filter(s => new Date(s.lastSeen) >= weekAgo);
-//     }
-
-//     // Sort by last seen
-//     filtered.sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
-
-//     container.innerHTML = filtered.map(session => `
-//         <div class="session-item" onclick="loadUserChats('${session.userId}')">
-//             <div class="session-info">
-//                 <div class="user-avatar">
-//                     <i class="fas fa-user"></i>
-//                 </div>
-//                 <div>
-//                     <div class="user-id">User: ${session.userId.substring(0, 16)}...</div>
-//                     <div class="meta">
-//                         <i class="far fa-clock"></i>
-//                         Last seen: ${new Date(session.lastSeen).toLocaleString()}
-//                     </div>
-//                 </div>
-//             </div>
-//             <div class="session-badge">${session.messageCount} msgs</div>
-//         </div>
-//     `).join('');
-// }
-
-// // Load chats
-// async function loadChats() {
-//     try {
-//         const response = await fetch('/api/admin/chats');
-//         allChats = await response.json();
-//         displayChats(allChats);
-//     } catch (error) {
-//         console.error('Error loading chats:', error);
-//         showToast('Error loading chats');
-//     }
-// }
-
-// // Display chats
-// function displayChats(chats) {
-//     const container = document.getElementById('chats-list');
-
-//     if (chats.length === 0) {
-//         container.innerHTML = `
-//             <div class="empty-state">
-//                 <div class="icon">
-//                     <i class="fas fa-comments"></i>
-//                 </div>
-//                 <p>No chats yet</p>
-//             </div>
-//         `;
-//         return;
-//     }
-
-//     // Sort by timestamp (newest first)
-//     const sorted = [...chats].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-//     container.innerHTML = sorted.map(chat => `
-//         <div class="chat-message">
-//             <div class="header-row">
-//                 <div class="user-badge">
-//                     <i class="fas fa-user-circle"></i>
-//                     User: ${chat.userId.substring(0, 12)}...
-//                 </div>
-//                 <div class="timestamp">
-//                     <i class="far fa-clock"></i>
-//                     ${new Date(chat.timestamp).toLocaleString()}
-//                 </div>
-//             </div>
-//             <div class="message-bubble user-msg">
-//                 ${chat.userMessage}
-//             </div>
-//             <div class="message-bubble ai-msg">
-//                 ${chat.aiResponse}
-//             </div>
-//         </div>
-//     `).join('');
-// }
-
-// // Load specific user chats
-// async function loadUserChats(userId) {
-//     try {
-//         const response = await fetch(`/api/admin/user/${userId}`);
-//         const userChats = await response.json();
-//         displayChats(userChats);
-        
-//         // Scroll to chats section
-//         document.querySelector('.chats-section').scrollIntoView({ behavior: 'smooth' });
-//         showToast(`Loaded ${userChats.length} messages from user`);
-//     } catch (error) {
-//         console.error('Error loading user chats:', error);
-//         showToast('Error loading user chats');
-//     }
-// }
-
-// // Filter sessions
-// function filterSessions() {
-//     const search = document.getElementById('search-sessions').value.toLowerCase();
-
-//     const filtered = Object.values(allSessions).filter(s => 
-//         s.userId.toLowerCase().includes(search)
-//     );  
-    
-//     const container = document.getElementById('sessions-list');
-//     if (filtered.length === 0) {
-//         container.innerHTML = `
-//             <div class="empty-state">
-//                 <div class="icon">
-//                     <i class="fas fa-search"></i>
-//                 </div>
-//                 <p>No matching sessions</p>
-//             </div>
-//         `;
-//         return;
-//     }
-
-//     container.innerHTML = filtered.map(session => `
-//         <div class="session-item" onclick="loadUserChats('${session.userId}')">
-//             <div class="session-info">
-//                 <div class="user-avatar">
-//                     <i class="fas fa-user"></i>
-//                 </div>
-//                 <div>
-//                     <div class="user-id">User: ${session.userId.substring(0, 16)}...</div>
-//                     <div class="meta">
-//                         <i class="far fa-clock"></i>
-//                         Last seen: ${new Date(session.lastSeen).toLocaleString()}
-//                     </div>
-//                 </div>
-//             </div>
-//             <div class="session-badge">${session.messageCount} msgs</div>
-//         </div>
-//     `).join('');
-// }
-
-// // Filter chats
-// function filterChats() {
-//     const search = document.getElementById('search-chats').value.toLowerCase();
-//     const filtered = allChats.filter(chat => 
-//         chat.userMessage.toLowerCase().includes(search) ||
-//         chat.aiResponse.toLowerCase().includes(search) ||
-//         chat.userId.toLowerCase().includes(search)
-//     );
-//     displayChats(filtered);
-// }
-
-// // Filter by time
-// function filterByTime(filter) {
-//     currentFilter = filter;
-    
-//     // Update button states
-//     document.querySelectorAll('.filter-btn').forEach(btn => {
-//         btn.classList.remove('active');
-//     });
-//     event.target.classList.add('active');
-    
-//     displaySessions();
-// }
-
-// // Refresh data
-// async function refreshData() {
-//     showToast('Refreshing data...');
-//     await loadAllData();
-//     showToast('Data refreshed successfully!');
-// }
-
-// // Export data
-// function exportData() {
-//     const data = {
-//         sessions: allSessions,
-//         chats: allChats,
-//         exportedAt: new Date().toISOString()
-//     };
-    
-//     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-//     const url = URL.createObjectURL(blob);
-//     const a = document.createElement('a');
-//     a.href = url;
-//     a.download = `bitlon-chats-${new Date().toISOString().split('T')[0]}.json`;
-//     a.click();
-    
-//     showToast('Data exported successfully!');
-// }
-
-// // Delete all chats
-// async function deleteAllChats() {
-//     if (!confirm('⚠️ Are you sure you want to delete ALL chat data? This cannot be undone!')) {
-//         return;
-//     }
-
-//     try {
-//         await fetch('/api/admin/chats', { method: 'DELETE' });
-//         showToast('All data deleted successfully');
-//         await loadAllData();
-//     } catch (error) {
-//         console.error('Error deleting chats:', error);
-//         showToast('Error deleting data');
-//     }
-// }
-
-// // Load data on page load
-// loadAllData();
-
-// // Auto-refresh every 30 seconds
-// setInterval(loadAllData, 30000);
-
-
-
 let allSessions = {};
 let allChats = [];
+let allTickets = [];
+let currentTimeFilter = 'all';
 
-// Show toast notification
 function showToast(message) {
-    const toast = document.getElementById('toast');
-    if (toast) {
-        toast.textContent = message;
-        toast.classList.add('show');
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
-    }
+  const toast = document.getElementById('toast');
+  const toastMessage = document.getElementById('toast-message');
+
+  if (!toast || !toastMessage) return;
+
+  toastMessage.textContent = message;
+  toast.classList.add('show');
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
 }
 
-// Load all data
-async function loadAllData() {
-    await Promise.all([
-        loadStats(),
-        loadSessions(),
-        loadChats()
-    ]);
-}
-
-// Load stats
-async function loadStats() {
-    try {
-        const response = await fetch('/api/admin/stats');
-        const stats = await response.json();
-        
-        document.getElementById('total-messages').textContent = stats.totalMessages || 0;
-        document.getElementById('total-users').textContent = stats.totalUsers || 0;
-        document.getElementById('active-today').textContent = stats.activeToday || 0;
-        document.getElementById('avg-messages').textContent = (stats.averageMessagesPerUser || 0).toFixed(1);
-    } catch (error) {
-        console.error('Error loading stats:', error);
-        showToast('Error loading statistics');
-    }
-}
-
-// Load sessions
-async function loadSessions() {
-    try {
-        const response = await fetch('/api/admin/sessions');
-        allSessions = await response.json();
-        displaySessions();
-    } catch (error) {
-        console.error('Error loading sessions:', error);
-        showToast('Error loading sessions');
-    }
-}
-
-// Display sessions
-function displaySessions() {
-    const container = document.getElementById('sessions-list');
-    const sessionsList = Object.values(allSessions);
-
-    if (sessionsList.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="icon">👤</div><p>No sessions yet</p></div>';
-        return;
-    }
-
-    // Sort by last seen
-    sessionsList.sort((a, b) => new Date(b.lastSeen || b.lastseen) - new Date(a.lastSeen || a.lastseen));
-
-    container.innerHTML = sessionsList.map(session => {
-        const userId = session.userId || session.user_id || 'Unknown';
-        const lastSeen = session.lastSeen || session.lastseen || new Date();
-        const messageCount = session.messageCount || session.message_count || 0;
-        
-        return `
-            <div class="session-item" onclick="loadUserChats('${userId}')">
-                <div>
-                    <div class="user-id">👤 User: ${userId.substring(0, 16)}...</div>
-                    <div class="meta">
-                        🕐 Last seen: ${new Date(lastSeen).toLocaleString()}
-                    </div>
-                </div>
-                <div class="session-badge">${messageCount} msgs</div>
-            </div>
-        `;
-    }).join('');
-}
-
-// Load chats
-async function loadChats() {
-    try {
-        const response = await fetch('/api/admin/chats');
-        allChats = await response.json();
-        displayChats(allChats);
-    } catch (error) {
-        console.error('Error loading chats:', error);
-        showToast('Error loading chats');
-    }
-}
-
-// Display chats
-function displayChats(chats) {
-    const container = document.getElementById('chats-list');
-
-    if (!chats || chats.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="icon">💬</div><p>No chats yet</p></div>';
-        return;
-    }
-
-    // Sort by timestamp (newest first)
-    const sorted = [...chats].sort((a, b) => {
-        const timeA = new Date(a.timestamp || a.created_at || 0);
-        const timeB = new Date(b.timestamp || b.created_at || 0);
-        return timeB - timeA;
-    });
-
-    container.innerHTML = sorted.map(chat => {
-        // Handle different field names from PostgreSQL
-        const userId = chat.userId || chat.user_id || 'Unknown';
-        const userMessage = chat.userMessage || chat.user_message || '';
-        const aiResponse = chat.aiResponse || chat.ai_response || '';
-        const timestamp = chat.timestamp || chat.created_at || new Date();
-        
-        // Safely handle userId substring
-        const displayUserId = userId ? userId.substring(0, 12) : 'Unknown';
-        
-        return `
-            <div class="chat-message">
-                <div class="header-row">
-                    <div class="user-badge">User: ${displayUserId}...</div>
-                    <div class="timestamp">🕐 ${new Date(timestamp).toLocaleString()}</div>
-                </div>
-                <div class="message-bubble user-msg">
-                    ${escapeHtml(userMessage)}
-                </div>
-                <div class="message-bubble ai-msg">
-                    ${escapeHtml(aiResponse)}
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-// Escape HTML to prevent XSS
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+  const div = document.createElement('div');
+  div.textContent = text || '';
+  return div.innerHTML;
 }
 
-// Load specific user chats
-async function loadUserChats(userId) {
-    try {
-        const response = await fetch(`/api/admin/user/${userId}`);
-        const userChats = await response.json();
-        displayChats(userChats);
-        
-        // Scroll to chats section
-        const chatsSection = document.querySelector('.chats-section');
-        if (chatsSection) {
-            chatsSection.scrollIntoView({ behavior: 'smooth' });
-        }
-        showToast(`Loaded ${userChats.length} messages from user`);
-    } catch (error) {
-        console.error('Error loading user chats:', error);
-        showToast('Error loading user chats');
+function formatDate(value) {
+  if (!value) return '-';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '-';
+  return parsed.toLocaleString();
+}
+
+function truncate(value, length = 12) {
+  if (!value) return 'Unknown';
+  return value.length > length ? `${value.slice(0, length)}...` : value;
+}
+
+function setFilterButtonState(activeButton) {
+  document.querySelectorAll('.filter-btn').forEach((button) => {
+    button.classList.remove('active');
+  });
+
+  if (activeButton) {
+    activeButton.classList.add('active');
+  }
+}
+
+function getFilteredSessions(searchText = '') {
+  const normalizedSearch = searchText.toLowerCase();
+  const today = new Date().toDateString();
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+
+  return Object.values(allSessions)
+    .filter((session) => {
+      const userId = (session.userId || session.user_id || '').toLowerCase();
+      if (normalizedSearch && !userId.includes(normalizedSearch)) {
+        return false;
+      }
+
+      const lastSeen = new Date(session.lastSeen || session.last_seen || 0);
+
+      if (currentTimeFilter === 'today') {
+        return lastSeen.toDateString() === today;
+      }
+
+      if (currentTimeFilter === 'week') {
+        return lastSeen >= weekAgo;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      const aTime = new Date(a.lastSeen || a.last_seen || 0).getTime();
+      const bTime = new Date(b.lastSeen || b.last_seen || 0).getTime();
+      return bTime - aTime;
+    });
+}
+
+function displaySessions(sessions) {
+  const container = document.getElementById('sessions-list');
+  if (!container) return;
+
+  if (!sessions.length) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">👤</div><p>No sessions found</p></div>';
+    return;
+  }
+
+  container.innerHTML = sessions
+    .map((session) => {
+      const userId = session.userId || session.user_id || 'Unknown';
+      const messageCount = session.messageCount || session.message_count || 0;
+      const encodedUserId = encodeURIComponent(userId);
+
+      return `
+        <div class="session-item" onclick="loadUserChats('${encodedUserId}')">
+          <div>
+            <div class="user-id">👤 User: ${escapeHtml(truncate(userId, 18))}</div>
+            <div class="meta">🕐 Last seen: ${formatDate(session.lastSeen || session.last_seen)}</div>
+          </div>
+          <div class="session-badge">${messageCount} msgs</div>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+function displayChats(chats) {
+  const container = document.getElementById('chats-list');
+  if (!container) return;
+
+  if (!chats || chats.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">💬</div><p>No chats yet</p></div>';
+    return;
+  }
+
+  const sortedChats = [...chats].sort((a, b) => {
+    const aTime = new Date(a.timestamp || a.created_at || 0).getTime();
+    const bTime = new Date(b.timestamp || b.created_at || 0).getTime();
+    return bTime - aTime;
+  });
+
+  container.innerHTML = sortedChats
+    .map((chat) => {
+      const userId = chat.userId || chat.user_id || 'Unknown';
+      const userMessage = chat.userMessage || chat.user_message || '';
+      const aiResponse = chat.aiResponse || chat.ai_response || '';
+      const timestamp = chat.timestamp || chat.created_at;
+
+      return `
+        <div class="chat-message">
+          <div class="header-row">
+            <div class="user-badge">User: ${escapeHtml(truncate(userId, 14))}</div>
+            <div class="timestamp">🕐 ${formatDate(timestamp)}</div>
+          </div>
+          <div class="message-bubble user-msg">${escapeHtml(userMessage)}</div>
+          <div class="message-bubble ai-msg">${escapeHtml(aiResponse)}</div>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+function displayTickets(tickets) {
+  const container = document.getElementById('tickets-list');
+  if (!container) return;
+
+  if (!tickets || tickets.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">🎫</div><p>No tickets raised yet</p></div>';
+    return;
+  }
+
+  container.innerHTML = tickets
+    .map((ticket) => {
+      const ticketCode = ticket.ticketCode || ticket.ticket_code || 'Unknown';
+      const userId = ticket.userId || ticket.user_id || 'Unknown';
+      const issueSummary = ticket.issueSummary || ticket.issue_summary || '';
+      const source = ticket.source || 'unknown';
+      const createdAt = ticket.createdAt || ticket.created_at;
+      const status = ticket.status || 'open';
+      const encodedCode = encodeURIComponent(ticketCode);
+
+      return `
+        <div class="session-item" onclick="loadTicketHistory('${encodedCode}')">
+          <div>
+            <div class="user-id">🎫 ${escapeHtml(ticketCode)} • ${escapeHtml(status.toUpperCase())}</div>
+            <div class="meta">👤 ${escapeHtml(truncate(userId, 18))} • ${escapeHtml(source)} • ${formatDate(createdAt)}</div>
+            <div class="meta">${escapeHtml(issueSummary || 'No issue summary')}</div>
+          </div>
+          <div class="session-badge">${escapeHtml(status)}</div>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+function renderTicketHistory(ticket) {
+  const container = document.getElementById('ticket-history-list');
+  const title = document.getElementById('selected-ticket-label');
+
+  if (!container || !title) return;
+
+  if (!ticket) {
+    title.textContent = 'No Ticket Selected';
+    container.innerHTML = '<div class="empty-state"><div class="icon">🗂️</div><p>Select a ticket to view full chat history</p></div>';
+    return;
+  }
+
+  const ticketCode = ticket.ticketCode || ticket.ticket_code || 'Unknown';
+  const userId = ticket.userId || ticket.user_id || 'Unknown';
+  const history = Array.isArray(ticket.history) ? ticket.history : [];
+
+  title.textContent = `Ticket ${ticketCode} • User ${truncate(userId, 20)}`;
+
+  if (history.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">💬</div><p>No ticket conversation history found</p></div>';
+    return;
+  }
+
+  const historyHtml = history
+    .map((message) => {
+      const role = message.role === 'user' ? 'user' : 'assistant';
+      const roleLabel = role === 'user' ? 'User' : 'AI';
+      const bubbleClass = role === 'user' ? 'user-msg' : 'ai-msg';
+
+      return `
+        <div class="chat-message">
+          <div class="header-row">
+            <div class="user-badge">${roleLabel}</div>
+          </div>
+          <div class="message-bubble ${bubbleClass}">${escapeHtml(message.content || '')}</div>
+        </div>
+      `;
+    })
+    .join('');
+
+  const meta = `
+    <div class="chat-message">
+      <div class="header-row">
+        <div class="user-badge">Ticket Meta</div>
+        <div class="timestamp">🕐 ${formatDate(ticket.createdAt || ticket.created_at)}</div>
+      </div>
+      <div class="message-bubble ai-msg">Status: ${escapeHtml(ticket.status || 'open')}<br>Source: ${escapeHtml(ticket.source || 'unknown')}<br>Issue: ${escapeHtml(ticket.issueSummary || ticket.issue_summary || 'No summary')}</div>
+      <div class="message-bubble ai-msg">Read-only history view. Admin reply is disabled in this panel.</div>
+    </div>
+  `;
+
+  container.innerHTML = meta + historyHtml;
+}
+
+async function loadStats() {
+  try {
+    const response = await fetch('/api/admin/stats');
+    const stats = await response.json();
+
+    document.getElementById('total-messages').textContent = stats.totalMessages || 0;
+    document.getElementById('total-users').textContent = stats.totalUsers || 0;
+    document.getElementById('active-today').textContent = stats.activeToday || 0;
+    document.getElementById('avg-messages').textContent = (stats.averageMessagesPerUser || 0).toFixed(1);
+
+    const totalTickets = document.getElementById('total-tickets');
+    const openTickets = document.getElementById('open-tickets');
+    if (totalTickets) totalTickets.textContent = stats.totalTickets || 0;
+    if (openTickets) openTickets.textContent = stats.openTickets || 0;
+  } catch (error) {
+    console.error('Error loading stats:', error);
+    showToast('Error loading statistics');
+  }
+}
+
+async function loadSessions() {
+  try {
+    const response = await fetch('/api/admin/sessions');
+    allSessions = await response.json();
+    displaySessions(getFilteredSessions(document.getElementById('search-sessions')?.value || ''));
+  } catch (error) {
+    console.error('Error loading sessions:', error);
+    showToast('Error loading sessions');
+  }
+}
+
+async function loadChats() {
+  try {
+    const response = await fetch('/api/admin/chats');
+    allChats = await response.json();
+    displayChats(allChats);
+  } catch (error) {
+    console.error('Error loading chats:', error);
+    showToast('Error loading chats');
+  }
+}
+
+async function loadTickets() {
+  try {
+    const response = await fetch('/api/admin/tickets');
+    allTickets = await response.json();
+    displayTickets(allTickets);
+  } catch (error) {
+    console.error('Error loading tickets:', error);
+    showToast('Error loading tickets');
+  }
+}
+
+async function loadAllData() {
+  await Promise.all([loadStats(), loadSessions(), loadChats(), loadTickets()]);
+}
+
+async function loadUserChats(encodedUserId) {
+  try {
+    const userId = decodeURIComponent(encodedUserId);
+    const response = await fetch(`/api/admin/user/${encodeURIComponent(userId)}`);
+    const userChats = await response.json();
+    displayChats(userChats);
+
+    const chatsSection = document.querySelector('.chats-section');
+    if (chatsSection) {
+      chatsSection.scrollIntoView({ behavior: 'smooth' });
     }
+
+    showToast(`Loaded ${userChats.length} messages from ${truncate(userId, 16)}`);
+  } catch (error) {
+    console.error('Error loading user chats:', error);
+    showToast('Error loading user chats');
+  }
 }
 
-// Filter sessions
+async function loadTicketHistory(encodedTicketCode) {
+  try {
+    const ticketCode = decodeURIComponent(encodedTicketCode);
+    const response = await fetch(`/api/admin/tickets/${encodeURIComponent(ticketCode)}`);
+
+    if (!response.ok) {
+      throw new Error('Ticket history request failed');
+    }
+
+    const ticket = await response.json();
+    renderTicketHistory(ticket);
+
+    const historySection = document.querySelector('.ticket-history-section');
+    if (historySection) {
+      historySection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    showToast(`Loaded ticket ${ticketCode}`);
+  } catch (error) {
+    console.error('Error loading ticket history:', error);
+    showToast('Error loading ticket history');
+  }
+}
+
 function filterSessions() {
-    const search = document.getElementById('search-sessions').value.toLowerCase();
-    const filtered = Object.values(allSessions).filter(s => {
-        const userId = s.userId || s.user_id || '';
-        return userId.toLowerCase().includes(search);
-    });
-    
-    const container = document.getElementById('sessions-list');
-    if (filtered.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>No matching sessions</p></div>';
-        return;
-    }
-
-    container.innerHTML = filtered.map(session => {
-        const userId = session.userId || session.user_id || 'Unknown';
-        const lastSeen = session.lastSeen || session.lastseen || new Date();
-        const messageCount = session.messageCount || session.message_count || 0;
-        
-        return `
-            <div class="session-item" onclick="loadUserChats('${userId}')">
-                <div>
-                    <div class="user-id">👤 User: ${userId.substring(0, 16)}...</div>
-                    <div class="meta">
-                        🕐 Last seen: ${new Date(lastSeen).toLocaleString()}
-                    </div>
-                </div>
-                <div class="session-badge">${messageCount} msgs</div>
-            </div>
-        `;
-    }).join('');
+  const search = (document.getElementById('search-sessions')?.value || '').toLowerCase();
+  displaySessions(getFilteredSessions(search));
 }
 
-// Filter chats
 function filterChats() {
-    const search = document.getElementById('search-chats').value.toLowerCase();
-    const filtered = allChats.filter(chat => {
-        const userMessage = (chat.userMessage || chat.user_message || '').toLowerCase();
-        const aiResponse = (chat.aiResponse || chat.ai_response || '').toLowerCase();
-        const userId = (chat.userId || chat.user_id || '').toLowerCase();
-        
-        return userMessage.includes(search) || 
-               aiResponse.includes(search) || 
-               userId.includes(search);
-    });
-    displayChats(filtered);
+  const search = (document.getElementById('search-chats')?.value || '').toLowerCase();
+
+  const filtered = allChats.filter((chat) => {
+    const userMessage = (chat.userMessage || chat.user_message || '').toLowerCase();
+    const aiResponse = (chat.aiResponse || chat.ai_response || '').toLowerCase();
+    const userId = (chat.userId || chat.user_id || '').toLowerCase();
+
+    return userMessage.includes(search) || aiResponse.includes(search) || userId.includes(search);
+  });
+
+  displayChats(filtered);
 }
 
-// Filter by time
-let currentFilter = 'all';
+function filterTickets() {
+  const search = (document.getElementById('search-tickets')?.value || '').toLowerCase();
 
-function filterByTime(filter) {
-    currentFilter = filter;
-    
-    // Update button states
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    event.target.classList.add('active');
-    
-    const sessionsList = Object.values(allSessions);
-    let filtered = sessionsList;
-    
-    if (filter === 'today') {
-        const today = new Date().toDateString();
-        filtered = sessionsList.filter(s => {
-            const lastSeen = new Date(s.lastSeen || s.lastseen);
-            return lastSeen.toDateString() === today;
-        });
-    } else if (filter === 'week') {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        filtered = sessionsList.filter(s => {
-            const lastSeen = new Date(s.lastSeen || s.lastseen);
-            return lastSeen >= weekAgo;
-        });
-    }
-    
-    const container = document.getElementById('sessions-list');
-    if (filtered.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No sessions in this period</p></div>';
-        return;
-    }
-    
-    filtered.sort((a, b) => new Date(b.lastSeen || b.lastseen) - new Date(a.lastSeen || a.lastseen));
-    
-    container.innerHTML = filtered.map(session => {
-        const userId = session.userId || session.user_id || 'Unknown';
-        const lastSeen = session.lastSeen || session.lastseen || new Date();
-        const messageCount = session.messageCount || session.message_count || 0;
-        
-        return `
-            <div class="session-item" onclick="loadUserChats('${userId}')">
-                <div>
-                    <div class="user-id">👤 User: ${userId.substring(0, 16)}...</div>
-                    <div class="meta">
-                        🕐 Last seen: ${new Date(lastSeen).toLocaleString()}
-                    </div>
-                </div>
-                <div class="session-badge">${messageCount} msgs</div>
-            </div>
-        `;
-    }).join('');
+  const filtered = allTickets.filter((ticket) => {
+    const ticketCode = (ticket.ticketCode || ticket.ticket_code || '').toLowerCase();
+    const userId = (ticket.userId || ticket.user_id || '').toLowerCase();
+    const issueSummary = (ticket.issueSummary || ticket.issue_summary || '').toLowerCase();
+
+    return ticketCode.includes(search) || userId.includes(search) || issueSummary.includes(search);
+  });
+
+  displayTickets(filtered);
 }
 
-// Refresh data
+function filterByTime(filter, button) {
+  currentTimeFilter = filter;
+  setFilterButtonState(button || null);
+  filterSessions();
+}
+
 async function refreshData() {
-    showToast('Refreshing data...');
-    await loadAllData();
-    showToast('Data refreshed successfully!');
+  showToast('Refreshing data...');
+  await loadAllData();
+  showToast('Data refreshed successfully');
 }
 
-// Export data
 function exportData() {
-    const data = {
-        sessions: allSessions,
-        chats: allChats,
-        exportedAt: new Date().toISOString()
-    };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bitlon-chats-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    showToast('Data exported successfully!');
+  const data = {
+    sessions: allSessions,
+    chats: allChats,
+    tickets: allTickets,
+    exportedAt: new Date().toISOString(),
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `bitlon-support-export-${new Date().toISOString().split('T')[0]}.json`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+
+  showToast('Data exported successfully');
 }
 
-// Delete all chats
 async function deleteAllChats() {
-    if (!confirm('⚠️ Are you sure you want to delete ALL chat data? This cannot be undone!')) {
-        return;
+  if (!confirm('⚠️ Delete all chats and tickets? This cannot be undone.')) {
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/admin/chats', { method: 'DELETE' });
+
+    if (!response.ok) {
+      throw new Error('Delete request failed');
     }
 
-    try {
-        const response = await fetch('/api/admin/chats', { method: 'DELETE' });
-        if (response.ok) {
-            showToast('All data deleted successfully');
-            await loadAllData();
-        } else {
-            showToast('Error deleting data');
-        }
-    } catch (error) {
-        console.error('Error deleting chats:', error);
-        showToast('Error deleting data');
-    }
+    renderTicketHistory(null);
+    showToast('All chats and tickets deleted');
+    await loadAllData();
+  } catch (error) {
+    console.error('Error deleting data:', error);
+    showToast('Error deleting data');
+  }
 }
 
-// Load data on page load
+renderTicketHistory(null);
 loadAllData();
-
-// Auto-refresh every 30 seconds
 setInterval(loadAllData, 30000);
+
+window.filterByTime = filterByTime;
+window.filterSessions = filterSessions;
+window.filterChats = filterChats;
+window.filterTickets = filterTickets;
+window.loadUserChats = loadUserChats;
+window.loadTicketHistory = loadTicketHistory;
+window.refreshData = refreshData;
+window.exportData = exportData;
+window.deleteAllChats = deleteAllChats;

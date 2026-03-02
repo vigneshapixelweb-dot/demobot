@@ -147,6 +147,16 @@
             color: #ed8936;
         }
 
+        .stat-card:nth-child(5) .stat-icon {
+            background: rgba(20, 184, 166, 0.12);
+            color: #0f766e;
+        }
+
+        .stat-card:nth-child(6) .stat-icon {
+            background: rgba(190, 24, 93, 0.12);
+            color: #be185d;
+        }
+
         .stat-card h3 {
             color: #718096;
             font-size: 13px;
@@ -165,7 +175,7 @@
             background-clip: text;
         }
 
-        .sessions-section, .chats-section {
+        .sessions-section, .chats-section, .tickets-section, .ticket-history-section {
             background: white;
             padding: 35px;
             border-radius: 20px;
@@ -323,30 +333,38 @@
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
 
-        .sessions-list, .chats-list {
+        .sessions-list, .chats-list, .tickets-list, .ticket-history-list {
             max-height: 500px;
             overflow-y: auto;
         }
 
         .sessions-list::-webkit-scrollbar,
-        .chats-list::-webkit-scrollbar {
+        .chats-list::-webkit-scrollbar,
+        .tickets-list::-webkit-scrollbar,
+        .ticket-history-list::-webkit-scrollbar {
             width: 8px;
         }
 
         .sessions-list::-webkit-scrollbar-track,
-        .chats-list::-webkit-scrollbar-track {
+        .chats-list::-webkit-scrollbar-track,
+        .tickets-list::-webkit-scrollbar-track,
+        .ticket-history-list::-webkit-scrollbar-track {
             background: #f7fafc;
             border-radius: 10px;
         }
 
         .sessions-list::-webkit-scrollbar-thumb,
-        .chats-list::-webkit-scrollbar-thumb {
+        .chats-list::-webkit-scrollbar-thumb,
+        .tickets-list::-webkit-scrollbar-thumb,
+        .ticket-history-list::-webkit-scrollbar-thumb {
             background: #cbd5e0;
             border-radius: 10px;
         }
 
         .sessions-list::-webkit-scrollbar-thumb:hover,
-        .chats-list::-webkit-scrollbar-thumb:hover {
+        .chats-list::-webkit-scrollbar-thumb:hover,
+        .tickets-list::-webkit-scrollbar-thumb:hover,
+        .ticket-history-list::-webkit-scrollbar-thumb:hover {
             background: #a0aec0;
         }
 
@@ -636,6 +654,28 @@
                     </div>
                 </div>
             </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <h3>Total Tickets</h3>
+                        <div class="value" id="total-tickets">0</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <h3>Open Tickets</h3>
+                        <div class="value" id="open-tickets">0</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-life-ring"></i>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="sessions-section">
@@ -662,14 +702,35 @@
                 <input type="text" id="search-sessions" placeholder="Search by User ID..." onkeyup="filterSessions()">
             </div>
             <div class="filter-buttons">
-                <button class="filter-btn active" onclick="filterByTime('all')">All Time</button>
-                <button class="filter-btn" onclick="filterByTime('today')">Today</button>
-                <button class="filter-btn" onclick="filterByTime('week')">This Week</button>
+                <button class="filter-btn active" onclick="filterByTime('all', this)">All Time</button>
+                <button class="filter-btn" onclick="filterByTime('today', this)">Today</button>
+                <button class="filter-btn" onclick="filterByTime('week', this)">This Week</button>
             </div>
             <div class="sessions-list" id="sessions-list">
                 <div class="loading">
                     <div class="spinner"></div>
                     Loading sessions...
+                </div>
+            </div>
+        </div>
+
+        <div class="tickets-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <div class="section-icon">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <h2>Support Tickets</h2>
+                </div>
+            </div>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-tickets" placeholder="Search ticket code, user, issue..." onkeyup="filterTickets()">
+            </div>
+            <div class="tickets-list" id="tickets-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading tickets...
                 </div>
             </div>
         </div>
@@ -695,6 +756,23 @@
                 <div class="loading">
                     <div class="spinner"></div>
                     Loading chats...
+                </div>
+            </div>
+        </div>
+
+        <div class="ticket-history-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <div class="section-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <h2 id="selected-ticket-label">No Ticket Selected</h2>
+                </div>
+            </div>
+            <div class="ticket-history-list" id="ticket-history-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Waiting for ticket selection...
                 </div>
             </div>
         </div>
