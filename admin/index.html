@@ -175,7 +175,7 @@
             background-clip: text;
         }
 
-        .sessions-section, .chats-section, .tickets-section, .ticket-history-section {
+        .sessions-section, .chats-section, .tickets-section {
             background: white;
             padding: 35px;
             border-radius: 20px;
@@ -333,38 +333,34 @@
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
 
-        .sessions-list, .chats-list, .tickets-list, .ticket-history-list {
+        .sessions-list, .chats-list, .tickets-list {
             max-height: 500px;
             overflow-y: auto;
         }
 
         .sessions-list::-webkit-scrollbar,
         .chats-list::-webkit-scrollbar,
-        .tickets-list::-webkit-scrollbar,
-        .ticket-history-list::-webkit-scrollbar {
+        .tickets-list::-webkit-scrollbar {
             width: 8px;
         }
 
         .sessions-list::-webkit-scrollbar-track,
         .chats-list::-webkit-scrollbar-track,
-        .tickets-list::-webkit-scrollbar-track,
-        .ticket-history-list::-webkit-scrollbar-track {
+        .tickets-list::-webkit-scrollbar-track {
             background: #f7fafc;
             border-radius: 10px;
         }
 
         .sessions-list::-webkit-scrollbar-thumb,
         .chats-list::-webkit-scrollbar-thumb,
-        .tickets-list::-webkit-scrollbar-thumb,
-        .ticket-history-list::-webkit-scrollbar-thumb {
+        .tickets-list::-webkit-scrollbar-thumb {
             background: #cbd5e0;
             border-radius: 10px;
         }
 
         .sessions-list::-webkit-scrollbar-thumb:hover,
         .chats-list::-webkit-scrollbar-thumb:hover,
-        .tickets-list::-webkit-scrollbar-thumb:hover,
-        .ticket-history-list::-webkit-scrollbar-thumb:hover {
+        .tickets-list::-webkit-scrollbar-thumb:hover {
             background: #a0aec0;
         }
 
@@ -723,6 +719,7 @@
                     <h2>Support Tickets</h2>
                 </div>
             </div>
+            <p style="margin-bottom: 14px; color: #64748b; font-size: 13px;">Click any ticket to open it in a dedicated window for reply and close actions.</p>
             <div class="search-box">
                 <i class="fas fa-search"></i>
                 <input type="text" id="search-tickets" placeholder="Search ticket code, user, issue..." onkeyup="filterTickets()">
@@ -760,22 +757,6 @@
             </div>
         </div>
 
-        <div class="ticket-history-section">
-            <div class="section-header">
-                <div class="section-title">
-                    <div class="section-icon">
-                        <i class="fas fa-book-open"></i>
-                    </div>
-                    <h2 id="selected-ticket-label">No Ticket Selected</h2>
-                </div>
-            </div>
-            <div class="ticket-history-list" id="ticket-history-list">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    Waiting for ticket selection...
-                </div>
-            </div>
-        </div>
     </div>
 
     <div class="toast" id="toast">

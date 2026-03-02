@@ -144,6 +144,72 @@ function normalizeHistory(messages) {
     .filter(Boolean);
 }
 
+async function getTicketByCode(ticketCode) {
+  const result = await pool.query(
+    `SELECT
+      ticket_code AS "ticketCode",
+      user_id AS "userId",
+      source,
+      status,
+      issue_summary AS "issueSummary",
+      last_user_message AS "lastUserMessage",
+      last_ai_message AS "lastAiMessage",
+      history,
+      created_at AS "createdAt",
+      updated_at AS "updatedAt"
+    FROM tickets
+    WHERE ticket_code = $1
+    LIMIT 1`,
+    [ticketCode]
+  );
+
+  if (result.rows.length === 0) {
+    return null;
+  }
+
+  const ticket = result.rows[0];
+  ticket.history = Array.isArray(ticket.history) ? ticket.history : [];
+  return ticket;
+}
+
+async function appendTicketMessage(ticketCode, role, content, meta = {}) {
+  const ticket = await getTicketByCode(ticketCode);
+  if (!ticket) {
+    return null;
+  }
+
+  const updatedHistory = [
+    ...ticket.history,
+    {
+      role,
+      content,
+      ...meta,
+      timestamp: new Date().toISOString(),
+    },
+  ];
+
+  await pool.query(
+    'UPDATE tickets SET history = $1, updated_at = NOW() WHERE ticket_code = $2',
+    [JSON.stringify(updatedHistory), ticketCode]
+  );
+
+  return getTicketByCode(ticketCode);
+}
+
+function buildTicketSummarySelect() {
+  return `SELECT
+    ticket_code AS "ticketCode",
+    user_id AS "userId",
+    source,
+    status,
+    issue_summary AS "issueSummary",
+    last_user_message AS "lastUserMessage",
+    last_ai_message AS "lastAiMessage",
+    created_at AS "createdAt",
+    updated_at AS "updatedAt"
+  FROM tickets`;
+}
+
 const SYSTEM_PROMPT = `You are Bitlon's AI customer support assistant. Bitlon is a cryptocurrency trading and investment platform.
 
 Your role is to:
@@ -307,6 +373,97 @@ app.post('/api/tickets', async (req, res) => {
   }
 });
 
+app.get('/api/tickets/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!userId || !userId.trim()) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    const result = await pool.query(
+      `${buildTicketSummarySelect()}
+      WHERE user_id = $1
+      ORDER BY updated_at DESC
+      LIMIT 200`,
+      [userId.trim()]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('User tickets load error:', error);
+    res.status(500).json({ error: 'Failed to load user tickets' });
+  }
+});
+
+app.get('/api/tickets/:ticketCode', async (req, res) => {
+  try {
+    const { ticketCode } = req.params;
+    const userId = typeof req.query.userId === 'string' ? req.query.userId.trim() : '';
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId query is required' });
+    }
+
+    const ticket = await getTicketByCode(ticketCode);
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    if (ticket.userId !== userId) {
+      return res.status(403).json({ error: 'Ticket access denied' });
+    }
+
+    res.json(ticket);
+  } catch (error) {
+    console.error('User ticket detail error:', error);
+    res.status(500).json({ error: 'Failed to load ticket detail' });
+  }
+});
+
+app.post('/api/tickets/:ticketCode/messages', async (req, res) => {
+  try {
+    const { ticketCode } = req.params;
+    const { userId, message } = req.body;
+    const normalizedUserId = typeof userId === 'string' ? userId.trim() : '';
+    const trimmedMessage = typeof message === 'string' ? message.trim() : '';
+
+    if (!normalizedUserId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    if (!trimmedMessage) {
+      return res.status(400).json({ error: 'message is required' });
+    }
+
+    const ticket = await getTicketByCode(ticketCode);
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    if (ticket.userId !== normalizedUserId) {
+      return res.status(403).json({ error: 'Ticket access denied' });
+    }
+
+    if (ticket.status === 'closed') {
+      return res.status(400).json({ error: 'Ticket is closed' });
+    }
+
+    await pool.query(
+      'UPDATE tickets SET last_user_message = $1, updated_at = NOW() WHERE ticket_code = $2',
+      [trimmedMessage, ticketCode]
+    );
+    const updatedTicket = await appendTicketMessage(ticketCode, 'user', trimmedMessage);
+
+    res.json({
+      message: 'Ticket message sent',
+      ticket: updatedTicket,
+    });
+  } catch (error) {
+    console.error('User ticket message error:', error);
+    res.status(500).json({ error: 'Failed to send ticket message' });
+  }
+});
+
 app.get('/api/admin/chats', async (_req, res) => {
   try {
     const result = await pool.query('SELECT * FROM chats ORDER BY timestamp DESC LIMIT 100');
@@ -339,17 +496,7 @@ app.get('/api/admin/sessions', async (_req, res) => {
 app.get('/api/admin/tickets', async (_req, res) => {
   try {
     const result = await pool.query(
-      `SELECT
-        ticket_code AS "ticketCode",
-        user_id AS "userId",
-        source,
-        status,
-        issue_summary AS "issueSummary",
-        last_user_message AS "lastUserMessage",
-        last_ai_message AS "lastAiMessage",
-        created_at AS "createdAt",
-        updated_at AS "updatedAt"
-      FROM tickets
+      `${buildTicketSummarySelect()}
       ORDER BY created_at DESC
       LIMIT 200`
     );
@@ -363,33 +510,72 @@ app.get('/api/admin/tickets', async (_req, res) => {
 app.get('/api/admin/tickets/:ticketCode', async (req, res) => {
   try {
     const { ticketCode } = req.params;
-    const result = await pool.query(
-      `SELECT
-        ticket_code AS "ticketCode",
-        user_id AS "userId",
-        source,
-        status,
-        issue_summary AS "issueSummary",
-        last_user_message AS "lastUserMessage",
-        last_ai_message AS "lastAiMessage",
-        history,
-        created_at AS "createdAt",
-        updated_at AS "updatedAt"
-      FROM tickets
-      WHERE ticket_code = $1
-      LIMIT 1`,
-      [ticketCode]
-    );
-
-    if (result.rows.length === 0) {
+    const ticket = await getTicketByCode(ticketCode);
+    if (!ticket) {
       return res.status(404).json({ error: 'Ticket not found' });
     }
 
-    const ticket = result.rows[0];
-    ticket.history = Array.isArray(ticket.history) ? ticket.history : [];
     res.json(ticket);
   } catch (error) {
     res.status(500).json({ error: 'Failed to load ticket history' });
+  }
+});
+
+app.post('/api/admin/tickets/:ticketCode/reply', async (req, res) => {
+  try {
+    const { ticketCode } = req.params;
+    const { message, adminName } = req.body;
+    const trimmedMessage = typeof message === 'string' ? message.trim() : '';
+
+    if (!trimmedMessage) {
+      return res.status(400).json({ error: 'Reply message is required' });
+    }
+
+    const ticket = await getTicketByCode(ticketCode);
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    if (ticket.status === 'closed') {
+      return res.status(400).json({ error: 'Cannot reply to a closed ticket' });
+    }
+
+    const updatedTicket = await appendTicketMessage(ticketCode, 'admin', trimmedMessage, {
+      adminName: typeof adminName === 'string' && adminName.trim() ? adminName.trim() : 'Admin',
+    });
+
+    res.json({
+      message: 'Reply added to ticket',
+      ticket: updatedTicket,
+    });
+  } catch (error) {
+    console.error('Ticket reply error:', error);
+    res.status(500).json({ error: 'Failed to send admin reply' });
+  }
+});
+
+app.post('/api/admin/tickets/:ticketCode/close', async (req, res) => {
+  try {
+    const { ticketCode } = req.params;
+    const ticket = await getTicketByCode(ticketCode);
+
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    await pool.query(
+      "UPDATE tickets SET status = 'closed', updated_at = NOW() WHERE ticket_code = $1",
+      [ticketCode]
+    );
+
+    const updatedTicket = await getTicketByCode(ticketCode);
+    res.json({
+      message: 'Ticket closed successfully',
+      ticket: updatedTicket,
+    });
+  } catch (error) {
+    console.error('Ticket close error:', error);
+    res.status(500).json({ error: 'Failed to close ticket' });
   }
 });
 

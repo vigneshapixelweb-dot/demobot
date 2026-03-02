@@ -161,7 +161,7 @@ function displayTickets(tickets) {
       const encodedCode = encodeURIComponent(ticketCode);
 
       return `
-        <div class="session-item" onclick="loadTicketHistory('${encodedCode}')">
+        <div class="session-item" onclick="openTicketWindow('${encodedCode}')">
           <div>
             <div class="user-id">🎫 ${escapeHtml(ticketCode)} • ${escapeHtml(status.toUpperCase())}</div>
             <div class="meta">👤 ${escapeHtml(truncate(userId, 18))} • ${escapeHtml(source)} • ${formatDate(createdAt)}</div>
@@ -172,60 +172,6 @@ function displayTickets(tickets) {
       `;
     })
     .join('');
-}
-
-function renderTicketHistory(ticket) {
-  const container = document.getElementById('ticket-history-list');
-  const title = document.getElementById('selected-ticket-label');
-
-  if (!container || !title) return;
-
-  if (!ticket) {
-    title.textContent = 'No Ticket Selected';
-    container.innerHTML = '<div class="empty-state"><div class="icon">🗂️</div><p>Select a ticket to view full chat history</p></div>';
-    return;
-  }
-
-  const ticketCode = ticket.ticketCode || ticket.ticket_code || 'Unknown';
-  const userId = ticket.userId || ticket.user_id || 'Unknown';
-  const history = Array.isArray(ticket.history) ? ticket.history : [];
-
-  title.textContent = `Ticket ${ticketCode} • User ${truncate(userId, 20)}`;
-
-  if (history.length === 0) {
-    container.innerHTML = '<div class="empty-state"><div class="icon">💬</div><p>No ticket conversation history found</p></div>';
-    return;
-  }
-
-  const historyHtml = history
-    .map((message) => {
-      const role = message.role === 'user' ? 'user' : 'assistant';
-      const roleLabel = role === 'user' ? 'User' : 'AI';
-      const bubbleClass = role === 'user' ? 'user-msg' : 'ai-msg';
-
-      return `
-        <div class="chat-message">
-          <div class="header-row">
-            <div class="user-badge">${roleLabel}</div>
-          </div>
-          <div class="message-bubble ${bubbleClass}">${escapeHtml(message.content || '')}</div>
-        </div>
-      `;
-    })
-    .join('');
-
-  const meta = `
-    <div class="chat-message">
-      <div class="header-row">
-        <div class="user-badge">Ticket Meta</div>
-        <div class="timestamp">🕐 ${formatDate(ticket.createdAt || ticket.created_at)}</div>
-      </div>
-      <div class="message-bubble ai-msg">Status: ${escapeHtml(ticket.status || 'open')}<br>Source: ${escapeHtml(ticket.source || 'unknown')}<br>Issue: ${escapeHtml(ticket.issueSummary || ticket.issue_summary || 'No summary')}</div>
-      <div class="message-bubble ai-msg">Read-only history view. Admin reply is disabled in this panel.</div>
-    </div>
-  `;
-
-  container.innerHTML = meta + historyHtml;
 }
 
 async function loadStats() {
@@ -304,28 +250,10 @@ async function loadUserChats(encodedUserId) {
   }
 }
 
-async function loadTicketHistory(encodedTicketCode) {
-  try {
-    const ticketCode = decodeURIComponent(encodedTicketCode);
-    const response = await fetch(`/api/admin/tickets/${encodeURIComponent(ticketCode)}`);
-
-    if (!response.ok) {
-      throw new Error('Ticket history request failed');
-    }
-
-    const ticket = await response.json();
-    renderTicketHistory(ticket);
-
-    const historySection = document.querySelector('.ticket-history-section');
-    if (historySection) {
-      historySection.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    showToast(`Loaded ticket ${ticketCode}`);
-  } catch (error) {
-    console.error('Error loading ticket history:', error);
-    showToast('Error loading ticket history');
-  }
+function openTicketWindow(encodedTicketCode) {
+  const ticketCode = decodeURIComponent(encodedTicketCode);
+  const url = `/admin/ticket.html?ticket=${encodeURIComponent(ticketCode)}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function filterSessions() {
@@ -404,7 +332,6 @@ async function deleteAllChats() {
       throw new Error('Delete request failed');
     }
 
-    renderTicketHistory(null);
     showToast('All chats and tickets deleted');
     await loadAllData();
   } catch (error) {
@@ -413,7 +340,6 @@ async function deleteAllChats() {
   }
 }
 
-renderTicketHistory(null);
 loadAllData();
 setInterval(loadAllData, 30000);
 
@@ -422,7 +348,7 @@ window.filterSessions = filterSessions;
 window.filterChats = filterChats;
 window.filterTickets = filterTickets;
 window.loadUserChats = loadUserChats;
-window.loadTicketHistory = loadTicketHistory;
+window.openTicketWindow = openTicketWindow;
 window.refreshData = refreshData;
 window.exportData = exportData;
 window.deleteAllChats = deleteAllChats;

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ticket Detail</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #e0ecff 0%, #f1f5ff 100%);
+      color: #1f2937;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 12px 35px rgba(15, 23, 42, 0.12);
+      padding: 18px;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0;
+    }
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .meta-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+    }
+    .meta-item strong {
+      display: block;
+      color: #475569;
+      margin-bottom: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .status-pill {
+      background: #0f766e;
+      color: #fff;
+      font-size: 12px;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .status-pill.closed {
+      background: #991b1b;
+    }
+    .history {
+      display: grid;
+      gap: 12px;
+      max-height: 56vh;
+      overflow: auto;
+      padding-right: 6px;
+    }
+    .msg {
+      border-radius: 12px;
+      padding: 12px;
+      border: 1px solid #dbeafe;
+      background: #eff6ff;
+    }
+    .msg.ai {
+      border-color: #dbeafe;
+      background: #f8fbff;
+    }
+    .msg.admin {
+      border-color: #fde68a;
+      background: #fffbeb;
+    }
+    .msg-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: #475569;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .actions {
+      display: grid;
+      gap: 10px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 90px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px;
+      font: inherit;
+      resize: vertical;
+    }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .primary { background: #1d4ed8; }
+    .danger { background: #b91c1c; }
+    .secondary { background: #64748b; }
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .note {
+      font-size: 12px;
+      color: #64748b;
+    }
+    .error {
+      color: #b91c1c;
+      font-size: 13px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header-row">
+        <h1 id="ticket-title">Ticket</h1>
+        <div id="status-pill" class="status-pill">OPEN</div>
+      </div>
+      <div class="meta" id="ticket-meta"></div>
+    </div>
+
+    <div class="card">
+      <div class="header-row" style="margin-bottom: 12px;">
+        <h1 style="font-size: 18px;">Conversation History</h1>
+      </div>
+      <div id="history" class="history"></div>
+    </div>
+
+    <div class="card">
+      <div class="header-row" style="margin-bottom: 10px;">
+        <h1 style="font-size: 18px;">Admin Actions</h1>
+      </div>
+      <div class="actions">
+        <textarea id="admin-reply" placeholder="Type a reply for this ticket..."></textarea>
+        <div class="btn-row">
+          <button class="primary" id="reply-btn" onclick="sendReply()">Send Reply</button>
+          <button class="danger" id="close-btn" onclick="closeTicket()">Close Ticket</button>
+          <button class="secondary" onclick="reloadTicket()">Refresh</button>
+        </div>
+        <div class="note">Replies are appended to ticket history and visible in admin audit trail.</div>
+        <div id="error" class="error"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="ticket.js"></script>
+</body>
+</html>
