@@ -210,7 +210,7 @@ function buildTicketSummarySelect() {
   FROM tickets`;
 }
 
-const CHAT_MODEL = 'llama3-70b-8192';
+const CHAT_MODEL = 'llama-3.3-70b-versatile';
 const MAX_CONTEXT_MESSAGES = 20;
 
 const SYSTEM_PROMPT = `You are Bitlon's AI customer support assistant for cryptocurrency users.
