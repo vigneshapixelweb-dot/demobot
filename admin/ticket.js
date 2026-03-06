@@ -66,7 +66,7 @@ function renderTicket(ticket) {
               <span>${label}</span>
               <span>${timestamp}</span>
             </div>
-            <div>${escapeHtml(msg.content || '')}</div>
+            <div class="msg-body">${escapeHtml(msg.content || '')}</div>
           </div>
         `;
       })

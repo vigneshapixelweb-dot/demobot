@@ -210,27 +210,73 @@ function buildTicketSummarySelect() {
   FROM tickets`;
 }
 
-const SYSTEM_PROMPT = `You are Bitlon's AI customer support assistant. Bitlon is a cryptocurrency trading and investment platform.
+const CHAT_MODEL = 'llama3-70b-8192';
+const MAX_CONTEXT_MESSAGES = 20;
 
-Your role is to:
-- Help users with questions about Bitlon's features and services
-- Provide information about cryptocurrency trading basics
-- Guide users through common issues (account, deposits, withdrawals, trading)
-- Answer FAQs about security, verification, and platform usage
-- Be friendly, professional, and security-conscious
-- ONLY answer questions related to cryptocurrency, trading, and Bitlon platform
-- If asked about non-crypto topics, politely redirect to crypto/Bitlon topics
-- Keep responses concise (under 150 words) unless user asks for details
-- Never provide financial advice or recommend specific investments
-- Always remind users to do their own research (DYOR)
+const SYSTEM_PROMPT = `You are Bitlon's AI customer support assistant for cryptocurrency users.
 
-Key Bitlon Information:
+Write responses that are:
+- Concise, clear, and practical (default to under 120 words)
+- Structured with short bullets or short steps when useful
+- Friendly and professional without filler text
+
+Scope and behavior:
+- Focus on Bitlon platform help, crypto trading basics, account safety, deposits, withdrawals, and verification
+- If user asks unrelated questions, politely redirect to Bitlon/crypto support topics
+- Never ask for passwords, seed phrases, private keys, OTP codes, or full card/bank details
+- Do not provide investment recommendations or guaranteed profit claims
+- If policy or account specifics are unknown, say so briefly and suggest contacting support@bitlon.com
+
+Bitlon facts:
 - Website: https://bitlon.com
-- Platform: Cryptocurrency trading and investment
-- Focus: Secure, user-friendly crypto trading
-- Support: Available 24/7 for users
+- Support: 24/7 via support@bitlon.com
+- Domain: cryptocurrency trading and investment platform`;
 
-Always prioritize user security and never ask for passwords, private keys, or sensitive information.`;
+function normalizeChatMessages(messages) {
+  if (!Array.isArray(messages)) {
+    return [];
+  }
+
+  return messages
+    .map((message) => {
+      if (!message || typeof message !== 'object') {
+        return null;
+      }
+
+      const role = message.role === 'user' ? 'user' : message.role === 'assistant' ? 'assistant' : null;
+      const content = typeof message.content === 'string' ? message.content.trim() : '';
+
+      if (!role || !content) {
+        return null;
+      }
+
+      return { role, content };
+    })
+    .filter(Boolean)
+    .slice(-MAX_CONTEXT_MESSAGES);
+}
+
+function writeStreamChunk(res, payload) {
+  res.write(`${JSON.stringify(payload)}\n`);
+}
+
+function flushCompleteWordChunks(buffer) {
+  const lastWhitespaceIndex = Math.max(
+    buffer.lastIndexOf(' '),
+    buffer.lastIndexOf('\n'),
+    buffer.lastIndexOf('\t')
+  );
+
+  if (lastWhitespaceIndex < 0) {
+    return { chunks: [], remainder: buffer };
+  }
+
+  const completeChunk = buffer.slice(0, lastWhitespaceIndex + 1);
+  const remainder = buffer.slice(lastWhitespaceIndex + 1);
+  const chunks = completeChunk.match(/\S+\s*|\s+/g) || [completeChunk];
+
+  return { chunks, remainder };
+}
 
 function getContextualSuggestions(userMessage, aiResponse) {
   const message = `${userMessage} ${aiResponse}`.toLowerCase();
@@ -272,35 +318,86 @@ function getContextualSuggestions(userMessage, aiResponse) {
 
 app.post('/api/chat', async (req, res) => {
   try {
-    const { messages, userId } = req.body;
+    const { messages, userId, stream } = req.body;
+    const normalizedMessages = normalizeChatMessages(messages);
 
-    if (!Array.isArray(messages) || messages.length === 0) {
+    if (normalizedMessages.length === 0) {
       return res.status(400).json({ error: 'Messages array is required' });
     }
 
     const normalizedUserId = typeof userId === 'string' && userId.trim()
       ? userId.trim()
       : `anonymous_${Date.now()}`;
+    const userMessage = normalizedMessages[normalizedMessages.length - 1]?.content || '';
+    const messagesWithSystem = [{ role: 'system', content: SYSTEM_PROMPT }, ...normalizedMessages];
 
-    const messagesWithSystem = [{ role: 'system', content: SYSTEM_PROMPT }, ...messages];
+    if (stream) {
+      res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-transform');
+      res.setHeader('Connection', 'keep-alive');
+
+      const chatCompletionStream = await groq.chat.completions.create({
+        messages: messagesWithSystem,
+        model: CHAT_MODEL,
+        temperature: 0.6,
+        max_tokens: 650,
+        top_p: 1,
+        stream: true,
+      });
+
+      let aiResponse = '';
+      let wordBuffer = '';
+
+      for await (const chunk of chatCompletionStream) {
+        const delta = chunk?.choices?.[0]?.delta?.content;
+
+        if (!delta) {
+          continue;
+        }
+
+        aiResponse += delta;
+        wordBuffer += delta;
+
+        const flushed = flushCompleteWordChunks(wordBuffer);
+        wordBuffer = flushed.remainder;
+
+        flushed.chunks.forEach((token) => {
+          writeStreamChunk(res, { type: 'token', token });
+        });
+      }
+
+      if (wordBuffer) {
+        writeStreamChunk(res, { type: 'token', token: wordBuffer });
+      }
+
+      const suggestions = getContextualSuggestions(userMessage, aiResponse);
+      await saveChatMessage(normalizedUserId, userMessage, aiResponse, suggestions);
+
+      writeStreamChunk(res, {
+        type: 'done',
+        suggestions,
+        model: CHAT_MODEL,
+      });
+
+      return res.end();
+    }
 
     const chatCompletion = await groq.chat.completions.create({
       messages: messagesWithSystem,
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
-      max_tokens: 600,
+      model: CHAT_MODEL,
+      temperature: 0.6,
+      max_tokens: 650,
       top_p: 1,
       stream: false,
     });
 
     const assistantMessage = chatCompletion.choices[0].message;
-    const userMessage = messages[messages.length - 1]?.content || '';
     const aiResponse = assistantMessage.content || '';
     const suggestions = getContextualSuggestions(userMessage, aiResponse);
 
     await saveChatMessage(normalizedUserId, userMessage, aiResponse, suggestions);
 
-    res.json({
+    return res.json({
       message: aiResponse,
       role: assistantMessage.role,
       timestamp: new Date().toISOString(),
@@ -309,7 +406,16 @@ app.post('/api/chat', async (req, res) => {
     });
   } catch (error) {
     console.error('Groq API Error:', error);
-    res.status(500).json({
+
+    if (res.headersSent) {
+      writeStreamChunk(res, {
+        type: 'error',
+        error: 'Failed to process chat request',
+      });
+      return res.end();
+    }
+
+    return res.status(500).json({
       error: 'Failed to process chat request',
       details: error.message,
     });
